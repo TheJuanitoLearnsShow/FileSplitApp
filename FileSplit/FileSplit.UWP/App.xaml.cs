@@ -7,12 +7,13 @@ using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
+using System.IO;
 
 namespace FileSplit.UWP
 {
     class FileGetter
     {
-        public async void GetReader()
+        public async System.Threading.Tasks.Task<Stream> GetReaderStream()
         {
             var picker = new Windows.Storage.Pickers.FileOpenPicker();
             picker.FileTypeFilter.Add(".*");
@@ -20,7 +21,10 @@ namespace FileSplit.UWP
             if (file != null)
             {
                 
-                return new System.IO.StreamReader(file.);//this is where app stops working and gives error message.
+                return await file.OpenStreamForReadAsync();//this is where app stops working and gives error message.
+            }
+            else {
+                return null;
             }
         }
     }
