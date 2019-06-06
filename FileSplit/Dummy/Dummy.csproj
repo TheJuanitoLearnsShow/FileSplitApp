@@ -4,12 +4,12 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProjectGuid>{E37702DE-1D21-44D3-91B2-FB65745606E6}</ProjectGuid>
+    <ProjectGuid>{D0FFEABB-A3DF-499A-A526-E90BC9C255A3}</ProjectGuid>
     <OutputType>AppContainerExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FileSplit.UWP</RootNamespace>
-    <AssemblyName>FileSplit.UWP</AssemblyName>
-    <DefaultLanguage>en</DefaultLanguage>
+    <RootNamespace>Dummy</RootNamespace>
+    <AssemblyName>Dummy</AssemblyName>
+    <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.18362.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
@@ -149,21 +149,9 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Xamarin.Forms" Version="4.0.0.425677" />
-    <PackageReference Include="Fabulous.Core" Version="0.35.0" />
-    <PackageReference Include="Fabulous.LiveUpdate" Version="0.35.0" />
-    <PackageReference Include="FSharp.Core" Version="4.6.2" />
-    <PackageReference Include="Fabulous.CustomControls" Version="0.35.0" />
-    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform" Version="6.2.3" />
-    <PackageReference Include="Xamarin.Plugin.FilePicker">
-      <Version>2.0.135</Version>
+    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
+      <Version>6.2.8</Version>
     </PackageReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\FileSplit\FileSplit.fsproj">
-      <Project>{D04729E6-637F-47B6-984E-60E7B5691D33}</Project>
-      <Name>FileSplit</Name>
-    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

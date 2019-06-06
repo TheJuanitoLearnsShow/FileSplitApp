@@ -6,11 +6,14 @@ open Fabulous.Core
 open Fabulous.DynamicViews
 open Xamarin.Forms
 open FileSplit.Core
+open Plugin.FilePicker
+open Plugin.FilePicker.Abstractions
 
 module App = 
     type Model = 
       { InputFilePath : string
         OutputFilePath : string
+        InputFileData : FileData option
         FileCount : int
         FilesCreated : string seq }
 
@@ -20,29 +23,64 @@ module App =
         | DoSplit
         | FileCountUpdate of int
         | SplitCompleted of Result<string seq, string>
+        | BrowseInputFile 
+        | BrowseInputFileCompleted of FileData option
+        | DoNothing
 
-    let initModel = { InputFilePath =""; OutputFilePath =""; FileCount = 0; FilesCreated= Seq.empty }
+    let initModel = { InputFilePath =""; OutputFilePath =""; FileCount = 0; FilesCreated= Seq.empty; InputFileData = None }
 
     let init () = initModel, Cmd.none
 
-    let splitCmd inputFile outFile = 
-        async { let! result = Splitter.SplitFile (fun i -> ()) inputFile outFile 5 
-                return SplitCompleted result }
-        |> Cmd.ofAsyncMsg
+    let splitCmd model = 
+        match model.InputFileData with
+        | Some d ->
+            let inputStream = d.GetStream()
+            let outFile = model.OutputFilePath
+            async { let! result = Splitter.SplitFile (fun i -> ()) inputStream outFile 5 
+                    return SplitCompleted result }
+            |> Cmd.ofAsyncMsg
+        | None ->
+            DoNothing |> Cmd.ofMsg
 
+                
+    let getFileCmd =
+        async {
+            try
+                let! fileData = (CrossFilePicker.Current.PickFile()) |> Async.AwaitTask
+                if (fileData |> isNull) then
+                    return None |> BrowseInputFileCompleted
+                else 
+
+                    let fileName = fileData.FileName;
+
+                    System.Console.WriteLine("File name chosen: " + fileName);
+                    return  fileData |> Some |> BrowseInputFileCompleted
+                
+            with ex ->
+                System.Console.WriteLine("Exception choosing file: " + ex.ToString()) ;
+                return None |> BrowseInputFileCompleted
+        } |> Cmd.ofAsyncMsg
+    
     let update msg model =
         match msg with
         | InputFilePath s -> { model with InputFilePath = s }, Cmd.none
         | OutputFilePath s -> { model with OutputFilePath = s }, Cmd.none
         | FileCountUpdate i -> model, Cmd.none
-        | DoSplit -> model, splitCmd model.InputFilePath model.OutputFilePath
+        | DoSplit -> model, splitCmd model 
         | SplitCompleted r -> 
             match r with
             | Ok files ->
                 { model with FilesCreated = files }, Cmd.none
             | Error err ->
                 { model with FilesCreated = [err ] }, Cmd.none
-                
+        | BrowseInputFile ->
+            model, getFileCmd
+        | BrowseInputFileCompleted f -> 
+            match f with
+            | Some filedata ->
+                { model with InputFileData = f; InputFilePath = filedata.FileName; OutputFilePath = filedata.FileName }, Cmd.none
+            | None ->
+                { model with InputFileData = f; InputFilePath = "" }, Cmd.none
 
     let view (model: Model) dispatch =
         let files = 
@@ -54,6 +92,7 @@ module App =
         let childrenElems = 
             [ 
                 View.Label(text = "Input File Path", horizontalOptions = LayoutOptions.Center)
+                View.Button(text = "Browse", command = (fun () -> dispatch BrowseInputFile), horizontalOptions = LayoutOptions.Center)
                 View.Entry(text = model.InputFilePath, textChanged = (fun e -> e.NewTextValue |> InputFilePath |> dispatch)  , horizontalOptions = LayoutOptions.Center, widthRequest=200.0, horizontalTextAlignment=TextAlignment.Center)
         
                 View.Label(text = "Output File Path", horizontalOptions = LayoutOptions.Center)

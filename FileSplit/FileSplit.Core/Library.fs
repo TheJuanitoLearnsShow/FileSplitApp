@@ -7,12 +7,14 @@ type IFileGetter =
     abstract member GetFile : string -> unit
 
 module Splitter =
-    let SplitFile currFileNotifier (inputFilepath:string) (outputFilepath:string) (maxLinesPerFile:int)  =
+    let SplitFile currFileNotifier (inputStream:Stream) (outputFileName:string) (maxLinesPerFile:int)  =
         async {
             let filesCreated = List<string>()
+            let outputFolder = System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData) //C:\Users\<user>\AppData\Local\Packages\f33bd753-7cb6-4177-bf50-b993ed286c3b_dcy57zvw0vndm\LocalState
+            let outputFilepath = Path.Combine(outputFolder,outputFileName)
             let mutable fileWriter = new StreamWriter(outputFilepath)
             filesCreated.Add(outputFilepath)
-            use fileReader = new StreamReader(inputFilepath)
+            use fileReader = new StreamReader(inputStream)
             let mutable currLineNumber = 0
             let mutable currFileNumber = 1
             try 
@@ -33,9 +35,13 @@ module Splitter =
                     currLine <- fileReader.ReadLine()
                 fileWriter.Close()
                 fileWriter.Dispose()
+                fileReader.Close()
+                fileReader.Dispose()
                 return Result.Ok(filesCreated :> seq<_>)
             with exn ->
                 fileWriter.Close()
                 fileWriter.Dispose()
+                fileReader.Close()
+                fileReader.Dispose()
                 return Result.Error(exn.ToString())
         }
