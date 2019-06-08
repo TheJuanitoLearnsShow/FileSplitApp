@@ -15,7 +15,8 @@ module App =
         OutputFilePath : string
         InputFileData : FileData option
         FileCount : int
-        FilesCreated : string seq }
+        FilesCreated : string seq
+        FolderPicked: IFolderPicked option}
 
     type Msg = 
         | InputFilePath of string
@@ -25,21 +26,24 @@ module App =
         | SplitCompleted of Result<string seq, string>
         | BrowseInputFile 
         | BrowseInputFileCompleted of FileData option
+        | BrowseOutputFolder 
+        | BrowseOutputFolderCompleted of IFolderPicked option
+        | OpenInExplorer
         | DoNothing
 
-    let initModel = { InputFilePath =""; OutputFilePath =""; FileCount = 0; FilesCreated= Seq.empty; InputFileData = None }
+    let initModel = { InputFilePath =""; OutputFilePath =""; FileCount = 0; FilesCreated= Seq.empty; InputFileData = None; FolderPicked = None}
 
     let init () = initModel, Cmd.none
 
     let splitCmd model = 
-        match model.InputFileData with
-        | Some d ->
+        match model.InputFileData, model.FolderPicked with
+        | Some d, Some folderPicked->
             let inputStream = d.GetStream()
             let outFile = model.OutputFilePath
-            async { let! result = Splitter.SplitFile (fun i -> ()) inputStream outFile 5 
+            async { let! result = Splitter.SplitFile (fun i -> ()) inputStream folderPicked outFile 5 
                     return SplitCompleted result }
             |> Cmd.ofAsyncMsg
-        | None ->
+        | _,_ ->
             DoNothing |> Cmd.ofMsg
 
                 
@@ -60,7 +64,38 @@ module App =
                 System.Console.WriteLine("Exception choosing file: " + ex.ToString()) ;
                 return None |> BrowseInputFileCompleted
         } |> Cmd.ofAsyncMsg
+        
+    let getFolderCmd =
+        async {
+            try
+                
+                let! folderPicked = DependencyService.Get<IFolderPickService>().PickFolder() |> Async.AwaitTask
+                if (folderPicked.FolderWasPicked()) then
+                    return  folderPicked |> Some |> BrowseOutputFolderCompleted
+                else 
+                    return None |> BrowseOutputFolderCompleted
+                    
+            with ex ->
+                System.Console.WriteLine("Exception choosing folder: " + ex.ToString()) ;
+                return None |> BrowseInputFileCompleted
+        } |> Cmd.ofAsyncMsg
     
+    let openFolderCmd model =
+        async {
+            try
+                
+                match model.FolderPicked with
+                | Some folderPicked->
+                    do! folderPicked.OpenInExplorer()  |> Async.AwaitTask
+                    return DoNothing
+                | None ->
+                    return DoNothing
+                    
+            with ex ->
+                System.Console.WriteLine("Exception choosing folder: " + ex.ToString()) ;
+                return DoNothing
+        } |> Cmd.ofAsyncMsg
+
     let update msg model =
         match msg with
         | InputFilePath s -> { model with InputFilePath = s }, Cmd.none
@@ -81,6 +116,18 @@ module App =
                 { model with InputFileData = f; InputFilePath = filedata.FileName; OutputFilePath = filedata.FileName }, Cmd.none
             | None ->
                 { model with InputFileData = f; InputFilePath = "" }, Cmd.none
+        | BrowseOutputFolder ->
+            model, getFolderCmd
+        | BrowseOutputFolderCompleted f -> 
+            match f with
+            | Some filedata ->
+                { model with FolderPicked = f }, Cmd.none
+            | None ->
+                { model with FolderPicked = f }, Cmd.none
+        | OpenInExplorer ->
+            model, openFolderCmd model
+        | DoNothing ->
+            model, Cmd.none
 
     let view (model: Model) dispatch =
         let files = 
@@ -92,14 +139,19 @@ module App =
         let childrenElems = 
             [ 
                 View.Label(text = "Input File Path", horizontalOptions = LayoutOptions.Center)
-                View.Button(text = "Browse", command = (fun () -> dispatch BrowseInputFile), horizontalOptions = LayoutOptions.Center)
                 View.Entry(text = model.InputFilePath, textChanged = (fun e -> e.NewTextValue |> InputFilePath |> dispatch)  , horizontalOptions = LayoutOptions.Center, widthRequest=200.0, horizontalTextAlignment=TextAlignment.Center)
         
+                View.Button(text = "Browse", command = (fun () -> dispatch BrowseInputFile), horizontalOptions = LayoutOptions.Center)
+
+
                 View.Label(text = "Output File Path", horizontalOptions = LayoutOptions.Center)
                 View.Entry(text = model.OutputFilePath, textChanged = (fun e -> e.NewTextValue |> OutputFilePath |> dispatch), horizontalOptions = LayoutOptions.Center, widthRequest=200.0, horizontalTextAlignment=TextAlignment.Center)
         
-                View.Button(text = "Do Split", command = (fun () -> dispatch DoSplit), horizontalOptions = LayoutOptions.Center)
+                View.Button(text = "Browse", command = (fun () -> dispatch BrowseOutputFolder), horizontalOptions = LayoutOptions.Center)
 
+                View.Button(text = "Do Split", command = (fun () -> dispatch DoSplit), horizontalOptions = LayoutOptions.Center)
+                
+                View.Button(text = "Open Folder with Split Files", command = (fun () -> dispatch OpenInExplorer), horizontalOptions = LayoutOptions.Center)
         
         
             ] |> List.append files

@@ -2,17 +2,26 @@
 
 open System.IO
 open System.Collections.Generic
+open System.Threading.Tasks
 
-type IFileGetter =
-    abstract member GetFile : string -> unit
+
+type IFolderPicked =
+    abstract member FolderWasPicked : unit -> bool
+    abstract member GetFolderPath : unit -> string
+    abstract member CreateFile : string -> Task<Stream> 
+    abstract member OpenInExplorer : unit -> Task
+    
+type IFolderPickService =
+    abstract member PickFolder : unit -> Task<IFolderPicked>
 
 module Splitter =
-    let SplitFile currFileNotifier (inputStream:Stream) (outputFileName:string) (maxLinesPerFile:int)  =
+    let SplitFile currFileNotifier (inputStream:Stream) (folderPicked:IFolderPicked) (outputFileName:string) (maxLinesPerFile:int)  =
         async {
             let filesCreated = List<string>()
-            let outputFolder = System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData) //C:\Users\<user>\AppData\Local\Packages\f33bd753-7cb6-4177-bf50-b993ed286c3b_dcy57zvw0vndm\LocalState
-            let outputFilepath = Path.Combine(outputFolder,outputFileName)
-            let mutable fileWriter = new StreamWriter(outputFilepath)
+            let outputFolder = folderPicked.GetFolderPath() //C:\Users\<user>\AppData\Local\Packages\f33bd753-7cb6-4177-bf50-b993ed286c3b_dcy57zvw0vndm\LocalState
+            let! outStream = folderPicked.CreateFile outputFileName |> Async.AwaitTask
+            let outputFilepath = Path.Combine( outputFolder, outputFileName)
+            let mutable fileWriter = new StreamWriter(outStream)
             filesCreated.Add(outputFilepath)
             use fileReader = new StreamReader(inputStream)
             let mutable currLineNumber = 0
@@ -27,9 +36,10 @@ module Splitter =
                         fileWriter.Dispose()
                         currFileNumber <- currFileNumber + 1
                         let newFileName = Path.GetFileNameWithoutExtension(outputFilepath) + "-" + currFileNumber.ToString() + Path.GetExtension(outputFilepath)
-                        let fullPath = Path.Combine( Path.GetDirectoryName(outputFilepath), newFileName) 
-                        fileWriter <- new StreamWriter(fullPath)
-                        filesCreated.Add(fullPath)
+                        let! newStream = folderPicked.CreateFile newFileName |> Async.AwaitTask
+                        let outputFilepath = Path.Combine( outputFolder, newFileName)
+                        fileWriter <- new StreamWriter(newStream)
+                        filesCreated.Add(outputFilepath)
                         currFileNotifier  currFileNumber
                         currLineNumber <- 0
                     currLine <- fileReader.ReadLine()

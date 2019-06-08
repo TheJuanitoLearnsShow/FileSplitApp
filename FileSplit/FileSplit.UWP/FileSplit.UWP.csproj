@@ -118,6 +118,8 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="FolderPicked.cs" />
+    <Compile Include="FolderPicker.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
@@ -160,6 +162,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\FileSplit.Core\FileSplit.Core.fsproj">
+      <Project>{15295a45-441e-4406-bc75-55ca3d0c7a38}</Project>
+      <Name>FileSplit.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\FileSplit\FileSplit.fsproj">
       <Project>{D04729E6-637F-47B6-984E-60E7B5691D33}</Project>
       <Name>FileSplit</Name>

@@ -2,7 +2,6 @@
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
-using Windows.Storage;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -11,7 +10,7 @@ using System.IO;
 
 namespace FileSplit.UWP
 {
-    class FileGetter
+    public class FileGetter
     {
         public async System.Threading.Tasks.Task<Stream> GetReaderStream()
         {
@@ -61,6 +60,7 @@ namespace FileSplit.UWP
 
                 rootFrame.NavigationFailed += OnNavigationFailed;
                 Xamarin.Forms.Forms.Init(e);
+                Xamarin.Forms.DependencyService.Register<FolderPicker>();
 
                 if (e.PreviousExecutionState == ApplicationExecutionState.Terminated)
                 {
