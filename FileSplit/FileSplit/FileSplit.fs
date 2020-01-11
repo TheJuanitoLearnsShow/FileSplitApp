@@ -141,7 +141,7 @@ module App =
                 View.Label(text = "Input File Path", horizontalOptions = LayoutOptions.Center)
                 View.Entry(text = model.InputFilePath, textChanged = (fun e -> e.NewTextValue |> InputFilePath |> dispatch)  , horizontalOptions = LayoutOptions.Center, widthRequest=200.0, horizontalTextAlignment=TextAlignment.Center)
         
-                View.Button(text = "Browse", command = (fun () -> dispatch BrowseInputFile), horizontalOptions = LayoutOptions.Center)
+                View.Button(text = "Browse for Input", command = (fun () -> dispatch BrowseInputFile), horizontalOptions = LayoutOptions.Center)
 
 
                 View.Label(text = "Output File Path", horizontalOptions = LayoutOptions.Center)
