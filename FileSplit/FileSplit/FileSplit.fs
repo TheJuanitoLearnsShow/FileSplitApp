@@ -2,99 +2,26 @@
 namespace FileSplit
 
 open System.Diagnostics
-open Fabulous.Core
-open Fabulous.DynamicViews
 open Xamarin.Forms
 open FileSplit.Core
 open Plugin.FilePicker
 open Plugin.FilePicker.Abstractions
+open Fabulous.XamarinForms.LiveUpdate
+open FileSplit.Core.Types
+open Fabulous
+open Fabulous.XamarinForms
+open FileSplit.Types
+open FileSplit.Commands.IoCommands
+open FileSplit.Commands.SplitCommands
 
 module App = 
-    type Model = 
-      { InputFilePath : string
-        OutputFilePath : string
-        InputFileData : FileData option
-        FileCount : int
-        FilesCreated : string seq
-        FolderPicked: IFolderPicked option}
-
-    type Msg = 
-        | InputFilePath of string
-        | OutputFilePath  of string
-        | DoSplit
-        | FileCountUpdate of int
-        | SplitCompleted of Result<string seq, string>
-        | BrowseInputFile 
-        | BrowseInputFileCompleted of FileData option
-        | BrowseOutputFolder 
-        | BrowseOutputFolderCompleted of IFolderPicked option
-        | OpenInExplorer
-        | DoNothing
+    
 
     let initModel = { InputFilePath =""; OutputFilePath =""; FileCount = 0; FilesCreated= Seq.empty; InputFileData = None; FolderPicked = None}
 
-    let init () = initModel, Cmd.none
-
-    let splitCmd model = 
-        match model.InputFileData, model.FolderPicked with
-        | Some d, Some folderPicked->
-            let inputStream = d.GetStream()
-            let outFile = model.OutputFilePath
-            async { let! result = Splitter.SplitFile (fun i -> ()) inputStream folderPicked outFile 5 
-                    return SplitCompleted result }
-            |> Cmd.ofAsyncMsg
-        | _,_ ->
-            DoNothing |> Cmd.ofMsg
+    let init () = initModel , Cmd.none
 
                 
-    let getFileCmd =
-        async {
-            try
-                let! fileData = (CrossFilePicker.Current.PickFile()) |> Async.AwaitTask
-                if (fileData |> isNull) then
-                    return None |> BrowseInputFileCompleted
-                else 
-
-                    let fileName = fileData.FileName;
-
-                    System.Console.WriteLine("File name chosen: " + fileName);
-                    return  fileData |> Some |> BrowseInputFileCompleted
-                
-            with ex ->
-                System.Console.WriteLine("Exception choosing file: " + ex.ToString()) ;
-                return None |> BrowseInputFileCompleted
-        } |> Cmd.ofAsyncMsg
-        
-    let getFolderCmd =
-        async {
-            try
-                
-                let! folderPicked = DependencyService.Get<IFolderPickService>().PickFolder() |> Async.AwaitTask
-                if (folderPicked.FolderWasPicked()) then
-                    return  folderPicked |> Some |> BrowseOutputFolderCompleted
-                else 
-                    return None |> BrowseOutputFolderCompleted
-                    
-            with ex ->
-                System.Console.WriteLine("Exception choosing folder: " + ex.ToString()) ;
-                return None |> BrowseInputFileCompleted
-        } |> Cmd.ofAsyncMsg
-    
-    let openFolderCmd model =
-        async {
-            try
-                
-                match model.FolderPicked with
-                | Some folderPicked->
-                    do! folderPicked.OpenInExplorer()  |> Async.AwaitTask
-                    return DoNothing
-                | None ->
-                    return DoNothing
-                    
-            with ex ->
-                System.Console.WriteLine("Exception choosing folder: " + ex.ToString()) ;
-                return DoNothing
-        } |> Cmd.ofAsyncMsg
 
     let update msg model =
         match msg with
@@ -138,16 +65,28 @@ module App =
             |> Seq.toList
         let childrenElems = 
             [ 
-                View.Label(text = "Input File Path", horizontalOptions = LayoutOptions.Center)
-                View.Entry(text = model.InputFilePath, textChanged = (fun e -> e.NewTextValue |> InputFilePath |> dispatch)  , horizontalOptions = LayoutOptions.Center, widthRequest=200.0, horizontalTextAlignment=TextAlignment.Center)
+                View.StackLayout(padding = Thickness 20.0, orientation = StackOrientation.Horizontal,
+                    children =
+                        [
+                            View.Label(text = "Input File Path", horizontalOptions = LayoutOptions.Center)
+                            View.Entry(text = model.InputFilePath, 
+                                //textChanged = (fun e -> e.NewTextValue |> InputFilePath |> dispatch)  , 
+                                completed = (fun text -> text |> InputFilePath |> dispatch),
+                                horizontalOptions = LayoutOptions.Center, 
+                                horizontalTextAlignment=TextAlignment.Center)
         
-                View.Button(text = "Browse for Input", command = (fun () -> dispatch BrowseInputFile), horizontalOptions = LayoutOptions.Center)
-
+                            View.Button(text = "Browse for Input", command = (fun () -> dispatch BrowseInputFile), horizontalOptions = LayoutOptions.Center)
+                        ]
+                )
 
                 View.Label(text = "Output File Path", horizontalOptions = LayoutOptions.Center)
-                View.Entry(text = model.OutputFilePath, textChanged = (fun e -> e.NewTextValue |> OutputFilePath |> dispatch), horizontalOptions = LayoutOptions.Center, widthRequest=200.0, horizontalTextAlignment=TextAlignment.Center)
+                View.Entry(text = model.OutputFilePath, 
+                        //textChanged = (fun e -> e.NewTextValue |> OutputFilePath |> dispatch), 
+                        completed = (fun text -> text |> OutputFilePath |> dispatch),
+                        horizontalOptions = LayoutOptions.Center, 
+                        horizontalTextAlignment=TextAlignment.Center)
         
-                View.Button(text = "Browse", command = (fun () -> dispatch BrowseOutputFolder), horizontalOptions = LayoutOptions.Center)
+                View.Button(text = "Browse for Output", command = (fun () -> dispatch BrowseOutputFolder), horizontalOptions = LayoutOptions.Center)
 
                 View.Button(text = "Do Split", command = (fun () -> dispatch DoSplit), horizontalOptions = LayoutOptions.Center)
                 
@@ -156,7 +95,7 @@ module App =
         
             ] |> List.append files
         View.ContentPage(
-          content = View.StackLayout(padding = 20.0, verticalOptions = LayoutOptions.Center,
+          content = View.StackLayout(padding = Thickness 20.0, verticalOptions = LayoutOptions.Center,
             children = childrenElems
                 
             
@@ -167,19 +106,17 @@ module App =
 
 type App () as app = 
     inherit Application ()
-
-    let runner = 
-        App.program
-#if DEBUG
+    
+    let runner =
+        Program.mkProgram App.init App.update App.view
         |> Program.withConsoleTrace
-#endif
-        |> Program.runWithDynamicView app
+        |> XamarinFormsProgram.run app
 
 #if DEBUG
     // Uncomment this line to enable live update in debug mode. 
     // See https://fsprojects.github.io/Fabulous/tools.html for further  instructions.
     //
-    //do runner.EnableLiveUpdate()
+    do runner.EnableLiveUpdate ()
 #endif    
 
     // Uncomment this code to save the application state to app.Properties using Newtonsoft.Json
