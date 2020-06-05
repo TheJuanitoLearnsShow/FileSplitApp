@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FileSplit.UI.Wpf2.Models;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Windows;
@@ -18,29 +19,44 @@ namespace FileSplit.UI.Wpf2.Controls
     /// </summary>
     public partial class FileEntryView : UserControl
     {
+        private readonly FileEntry _viewModel;
+
         public FileEntryView()
         {
             InitializeComponent();
+            _viewModel = this.DataContext;
         }
-        public async Task<IFolderPicked> PickFolder()
+        private void PickFolder()
         {
-            using (var dialog = new FolderBrowserDialog())
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
             {
-                DialogResult result = dialog.ShowDialog();
-                if (DialogResult.OK == result)
+                var result = dialog.ShowDialog();
+                if (System.Windows.Forms.DialogResult.OK == result)
                 {
-                    return new FolderPicked(dialog.SelectedPath);
+                    _viewModel.SelectedFilePath = dialog.SelectedPath;
                 }
-                else
+            }
+        }
+        private void PickFile()
+        {
+            using (var openFileDialog = new System.Windows.Forms.OpenFileDialog())
+            {
+                if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-
-                    return new FolderPicked(false);
+                    _viewModel.SelectedFilePath = openFileDialog.FileName;
                 }
             }
         }
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-
+            if (_viewModel.IsFolder)
+            {
+                PickFolder();
+            }
+            else
+            {
+                PickFile();
+            }
         }
     }
 }
