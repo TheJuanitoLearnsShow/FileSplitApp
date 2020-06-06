@@ -19,12 +19,11 @@ namespace FileSplit.UI.Wpf2.Controls
     /// </summary>
     public partial class FileEntryView : UserControl
     {
-        private readonly FileEntry _viewModel;
+        private FileEntry _viewModel;
 
         public FileEntryView()
         {
             InitializeComponent();
-            _viewModel = this.DataContext;
         }
         private void PickFolder()
         {
@@ -49,6 +48,7 @@ namespace FileSplit.UI.Wpf2.Controls
         }
         private void Button_Click(object sender, RoutedEventArgs e)
         {
+            _viewModel = (FileEntry)this.DataContext;
             if (_viewModel.IsFolder)
             {
                 PickFolder();

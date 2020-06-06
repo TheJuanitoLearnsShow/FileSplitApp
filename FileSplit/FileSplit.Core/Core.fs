@@ -47,3 +47,7 @@ module Splitter =
                 fileReader.Dispose()
                 return Result.Error(exn.ToString())
         }
+    
+    let SplitFileAsTask currFileNotifier (inputStream:Stream) (folderPicked:IFolderPicked) (outputFileName:string) (maxLinesPerFile:int) = 
+        SplitFile currFileNotifier (inputStream) (folderPicked) (outputFileName) (maxLinesPerFile)
+        |> Async.StartAsTask

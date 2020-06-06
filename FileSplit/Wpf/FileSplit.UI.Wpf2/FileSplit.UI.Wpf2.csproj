@@ -15,4 +15,16 @@
     <ProjectReference Include="..\..\FileSplit.Core\FileSplit.Core.fsproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Controls\SimpleEntry.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Controls\SimpleEntry.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+
 </Project>
