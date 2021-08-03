@@ -60,7 +60,7 @@ namespace FileSplit.UI.Wpf2.Models
         public SplitForm()
         {
             NewFilename = new SimpleEntry() { Label = "New Filename", Value = "NewSplitFile" };
-            MaxLines = new SimpleEntry() { Label = "New Filename", Value = "1000" };
+            MaxLines = new SimpleEntry() { Label = "Max Lines", Value = "1000" };
             InputFileInfo = new FileEntry() { IsFolder = false, Label = "File to Split", BrowseLabel = "Browse" };
             OutputFolderInfo = new FileEntry() { IsFolder = true, Label = "Output Folder", BrowseLabel = "Browse" };
         }
