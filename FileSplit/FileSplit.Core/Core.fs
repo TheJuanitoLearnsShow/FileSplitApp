@@ -15,13 +15,15 @@ module Splitter =
             let outputFilepath = Path.Combine( outputFolder, outputFileName)
             let mutable fileWriter = new StreamWriter(outStream)
             filesCreated.Add(outputFilepath)
-            use fileReader = new StreamReader(inputStream)
+            use fileReader = new StreamReader(inputStream, true)
             let mutable currLineNumber = 0
             let mutable currFileNumber = 1
             try 
                 let mutable currLine = fileReader.ReadLine()
                 while currLine |> isNull |> not do
-                    fileWriter.WriteLine(currLine)
+                    if currLineNumber > 0 then 
+                        fileWriter.WriteLine(currLine)
+                    fileWriter.Write(currLine)
                     currLineNumber <- currLineNumber + 1
                     if (currLineNumber >= maxLinesPerFile) then
                         fileWriter.Close()
