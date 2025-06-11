@@ -8,20 +8,11 @@ namespace FileSplit.UI.Wpf2
 {
     public class FolderPicker : IFolderPickService
     {
-        public async Task<IFolderPicked> PickFolder()
+        public Task<IFolderPicked> PickFolder()
         {
-            using (var dialog = new FolderBrowserDialog())
-            {
-                DialogResult result = dialog.ShowDialog();
-                if (DialogResult.OK == result)
-                {
-                    return new FolderPicked(dialog.SelectedPath);
-                }else
-                {
-
-                    return new FolderPicked(false);
-                }
-            }
+            using var dialog = new FolderBrowserDialog();
+            DialogResult result = dialog.ShowDialog();
+            return Task.FromResult<IFolderPicked>(DialogResult.OK == result ? new FolderPicked(dialog.SelectedPath) : new FolderPicked(false));
         }
     }
 }

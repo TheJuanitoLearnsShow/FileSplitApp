@@ -7,7 +7,7 @@ open FileSplit.Core.Types
 
 
 module Splitter =
-    let private createNewFile (folderPicked:IFolderPicked) outputFolder outputFilepath encodingFound currFileNumber =
+    let private createNewFile (folderPicked:IFolderPicked) outputFolder (outputFilepath:string) encodingFound currFileNumber =
         async {
             let newFileName = Path.GetFileNameWithoutExtension(outputFilepath) + "-" + currFileNumber.ToString() + Path.GetExtension(outputFilepath)
             let! newStream = folderPicked.CreateFile newFileName |> Async.AwaitTask

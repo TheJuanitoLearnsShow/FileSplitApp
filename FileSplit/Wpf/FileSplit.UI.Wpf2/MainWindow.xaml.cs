@@ -67,5 +67,13 @@ namespace FileSplit.UI.Wpf2
             }
             );
         }
+
+        public void LoadFileFromPath(string filePath)
+        {
+            if (!string.IsNullOrEmpty(filePath) && System.IO.File.Exists(filePath))
+            {
+                _viewModel.InputFileInfo.SelectedFilePath = filePath;
+            }
+        }
     }
 }
