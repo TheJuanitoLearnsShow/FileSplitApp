@@ -1,0 +1,67 @@
+name: Publish WPF App
+
+on:
+  push:
+    tags:
+    - 'v*' # Trigger when a tag starting with "v" (e.g., v1.0.0) is pushed
+
+jobs:
+  build:
+    name: Build and Package WPF App
+    runs-on: windows-latest
+    working-directory: FileSplit\Wpf\FileSplit.UI.Wpf2\FileSplit.UI.Wpf2.csproj
+
+    steps:
+    # Checkout the repository code
+    - name: Checkout source code
+      uses: actions/checkout@v4
+
+    # Set up .NET environment
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+      dotnet-version: '9.0.x' # Adjust this depending on your app's .NET version
+
+    # Restore dependencies
+    - name: Restore dependencies
+      run: dotnet restore
+
+    # Build the WPF application
+    - name: Build project
+      run: dotnet build --configuration Release
+
+    # Publish the application
+    - name: Publish WPF App
+      run: dotnet publish -c Release -o ./publish
+
+    # Compress the executable into a ZIP file
+    - name: Zip the application
+      run: |
+        Compress-Archive -Path ./publish/* -DestinationPath ./FileSplitApp.zip
+
+    # Upload artifact to GitHub Actions
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: FileSplitApp
+        path: ./FileSplitApp.zip
+
+  release:
+    name: Create Release and Upload Artifact
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout the repository code
+    - name: Checkout source code
+      uses: actions/checkout@v4
+
+    # Create a release and attach the ZIP artifact
+    - name: Create Release
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        body: |
+          This release contains the compiled WPF application.
+        artifacts: './FileSplitApp.zip'
