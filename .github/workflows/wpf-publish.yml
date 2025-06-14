@@ -13,7 +13,6 @@ jobs:
     runs-on: windows-latest
     defaults:
       run:
-        shell: bash
         working-directory: FileSplit\Wpf\FileSplit.UI.Wpf2
     
 
