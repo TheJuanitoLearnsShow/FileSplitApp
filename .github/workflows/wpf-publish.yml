@@ -1,15 +1,21 @@
 name: Publish WPF App
 
 on:
+  workflow_dispatch: # Allows manual triggering of the workflow
   push:
     tags:
     - 'v*' # Trigger when a tag starting with "v" (e.g., v1.0.0) is pushed
+
 
 jobs:
   build:
     name: Build and Package WPF App
     runs-on: windows-latest
-    working-directory: FileSplit\Wpf\FileSplit.UI.Wpf2\FileSplit.UI.Wpf2.csproj
+    defaults:
+      run:
+        shell: bash
+        working-directory: FileSplit\Wpf\FileSplit.UI.Wpf2
+    
 
     steps:
     # Checkout the repository code
@@ -20,7 +26,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-      dotnet-version: '9.0.x' # Adjust this depending on your app's .NET version
+        dotnet-version: '9.0.x' # Adjust this depending on your app's .NET version
 
     # Restore dependencies
     - name: Restore dependencies
